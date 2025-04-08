@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Шары и крест</title>
+    <style>
+        :root {
+            --red: #ff2a2a;
+            --blue: #2a7fff;
+            --dark: #222034;
+            --light: #f4f4f4;
+            --bg: #1d1d2f;
+            --pixel: 'Press Start 2P', cursive;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            font-family: var(--pixel);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            background: var(--bg);
+            color: var(--light);
+            overflow-x: hidden;
+            touch-action: manipulation;
+            image-rendering: pixelated;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            border-bottom: 4px solid var(--red);
+            padding-bottom: 10px;
+        }
+        
+        h1 {
+            color: var(--light);
+            margin-bottom: 5px;
+            font-size: 1.5rem;
+            text-shadow: 3px 3px 0 var(--red), -1px -1px 0 var(--blue);
+            padding: 5px 0;
+            letter-spacing: 1px;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 400px;
+            border: 8px solid #3a3a4a;
+            box-shadow: 0 0 0 4px #5a5a6a;
+            background: #2a2a3a;
+            padding: 5px;
+        }
+        
+        .game-board {
+            background: #1a1a2a;
+            padding: 5px;
+            border: 4px solid #4a4a5a;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            aspect-ratio: 1/1;
+            width: 100%;
+            background: #3a3a4a;
+            border: 2px solid #5a5a6a;
+        }
+        
+        .cell {
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a2a;
+            position: relative;
+            border: 1px solid #3a3a4a;
+        }
+        
+        .ball {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 0;
+            top: 10%;
+            left: 10%;
+            box-shadow: 
+                inset -2px -2px 0px rgba(0,0,0,0.5),
+                inset 2px 2px 0px rgba(255,255,255,0.2);
+        }
+        
+        .red {
+            background: var(--red);
+            border: 2px solid #ff6a6a;
+        }
+        
+        .blue {
+            background: var(--blue);
+            border: 2px solid #6aafff;
+        }
+        
+        .cross {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            background: #5a5a6a;
+            top: 10%;
+            left: 10%;
+            z-index: 3;
+            box-shadow: 
+                inset -2px -2px 0px rgba(0,0,0,0.5),
+                inset 2px 2px 0px rgba(255,255,255,0.2);
+        }
+        
+        .cross::before, .cross::after {
+            content: "";
+            position: absolute;
+            width: 60%;
+            height: 4px;
+            background-color: var(--dark);
+            top: 50%;
+            left: 20%;
+        }
+        
+        .cross::before {
+            transform: translateY(-50%) rotate(45deg);
+            box-shadow: 1px 1px 0 #7a7a8a;
+        }
+        
+        .cross::after {
+            transform: translateY(-50%) rotate(-45deg);
+            box-shadow: 1px 1px 0 #7a7a8a;
+        }
+        
+        .game-info {
+            background-color: #2a2a3a;
+            padding: 10px;
+            border: 4px solid #4a4a5a;
+            margin-bottom: 10px;
+            color: var(--light);
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+        
+        #status {
+            font-weight: normal;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #1a1a2a;
+            border: 2px solid #4a4a5a;
+            text-align: center;
+            color: #ffcc00;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .controls {
+            display: flex;
+            width: 100%;
+        }
+        
+        button {
+            padding: 12px;
+            font-size: 0.7rem;
+            background: #3a3a4a;
+            color: white;
+            border: none;
+            border: 3px solid #5a5a6a;
+            border-top-color: #7a7a8a;
+            border-left-color: #7a7a8a;
+            cursor: pointer;
+            width: 100%;
+            font-family: var(--pixel);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: inset -2px -2px 0px rgba(0,0,0,0.5);
+        }
+        
+        button:active {
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.5);
+            border-top-color: #5a5a6a;
+            border-left-color: #5a5a6a;
+            border-bottom-color: #7a7a8a;
+            border-right-color: #7a7a8a;
+        }
+        
+        .win-animation {
+            animation: winPulse 0.5s infinite alternate;
+        }
+        
+        @keyframes winPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        
+        .drop-animation {
+            animation: drop 0.3s steps(4) forwards;
+        }
+        
+        @keyframes drop {
+            0% { transform: translateY(-100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .cross-animation {
+            animation: crossAppear 0.3s steps(4) forwards;
+        }
+        
+        @keyframes crossAppear {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* CRT эффект */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Шары и крест</h1>
+    </div>
+    
+    <div class="game-container">
+        <div class="game-board">
+            <div class="grid" id="grid"></div>
+        </div>
+        
+        <div class="game-info">
+            <div id="status">Ход: Игрок 1 (Красный)</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="restart">Новая игра</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Константы игры
+            const GRID_SIZE = 10;
+            const WIN_CONDITION = 4;
+            
+            // Элементы DOM
+            const gridElement = document.getElementById('grid');
+            const statusElement = document.getElementById('status');
+            const restartButton = document.getElementById('restart');
+            
+            // Состояние игры
+            let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+            let currentPlayer = 1;
+            let player1CrossUsed = false;
+            let player2CrossUsed = false;
+            let gameOver = false;
+            let animationInProgress = false;
+            let touchTimer = null;
+            let isTouch = false;
+            
+            // Инициализация игры
+            function initGame() {
+                createGrid();
+                setupEventListeners();
+                newGame();
+            }
+            
+            // Создание игрового поля
+            function createGrid() {
+                gridElement.innerHTML = '';
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        // Обработка касаний
+                        cell.addEventListener('touchstart', (e) => {
+                            isTouch = true;
+                            touchTimer = setTimeout(() => {
+                                handleRightClick(x, y);
+                                e.preventDefault();
+                            }, 500);
+                        });
+                        
+                        cell.addEventListener('touchend', (e) => {
+                            if (touchTimer) {
+                                clearTimeout(touchTimer);
+                                if (isTouch) {
+                                    handleCellClick(x);
+                                }
+                            }
+                            isTouch = false;
+                            e.preventDefault();
+                        });
+                        
+                        cell.addEventListener('click', () => handleCellClick(x));
+                        
+                        gridElement.appendChild(cell);
+                    }
+                }
+            }
+            
+            // Настройка обработчиков событий
+            function setupEventListeners() {
+                restartButton.addEventListener('click', newGame);
+            }
+            
+            // Новая игра
+            function newGame() {
+                grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+                currentPlayer = 1;
+                player1CrossUsed = false;
+                player2CrossUsed = false;
+                gameOver = false;
+                
+                updateGrid();
+                updateStatus();
+                
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.classList.remove('win-animation');
+                });
+            }
+            
+            // Обновление игрового поля
+            function updateGrid() {
+                const balls = document.querySelectorAll('.ball, .cross');
+                balls.forEach(ball => ball.remove());
+                
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        if (grid[y][x] === 0) continue;
+                        
+                        const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                        if (!cell) continue;
+                        
+                        if (grid[y][x] === 1 || grid[y][x] === 2) {
+                            const ball = document.createElement('div');
+                            ball.className = `ball ${grid[y][x] === 1 ? 'red' : 'blue'} drop-animation`;
+                            cell.appendChild(ball);
+                        } 
+                        else if (grid[y][x] === -1) {
+                            const cross = document.createElement('div');
+                            cross.className = 'cross cross-animation';
+                            cell.appendChild(cross);
+                        }
+                    }
+                }
+            }
+            
+            // Обработка клика (бросок шара)
+            function handleCellClick(col) {
+                if (gameOver || animationInProgress) return;
+                
+                for (let row = GRID_SIZE - 1; row >= 0; row--) {
+                    if (grid[row][col] === 0) {
+                        makeMove(row, col, col);
+                        return;
+                    }
+                }
+            }
+            
+            // Совершение хода
+            function makeMove(row, col, clickedCol) {
+                animationInProgress = true;
+                grid[row][col] = currentPlayer;
+                
+                const cell = document.querySelector(`.cell[data-x="${clickedCol}"][data-y="${row}"]`);
+                const ball = document.createElement('div');
+                ball.className = `ball ${currentPlayer === 1 ? 'red' : 'blue'} drop-animation`;
+                cell.appendChild(ball);
+                
+                setTimeout(() => {
+                    animationInProgress = false;
+                    
+                    if (checkWin(row, col)) {
+                        handleWin();
+                    } else if (isBoardFull()) {
+                        handleDraw();
+                    } else {
+                        switchPlayer();
+                    }
+                }, 300);
+            }
+            
+            // Обработка правого клика (установка креста)
+            function handleRightClick(x, y) {
+                if (gameOver || animationInProgress) return;
+                
+                if ((currentPlayer === 1 && player1CrossUsed) || (currentPlayer === 2 && player2CrossUsed)) {
+                    return;
+                }
+                
+                if (grid[y][x] !== 0) {
+                    return;
+                }
+
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const ny = y + dy;
+                        const nx = x + dx;
+                        if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
+                            grid[ny][nx] = -1;
+                        }
+                    }
+                }
+
+                if (currentPlayer === 1) {
+                    player1CrossUsed = true;
+                } else {
+                    player2CrossUsed = true;
+                }
+                
+                updateGrid();
+                updateStatus();
+                
+                if (isBoardFull()) {
+                    handleDraw();
+                    return;
+                }
+                
+                switchPlayer();
+            }
+            
+            // Проверка победы
+            function checkWin(row, col) {
+                const player = grid[row][col];
+                if (player === -1 || player === 0) return false;
+                
+                const directions = [
+                    [0, 1], [1, 0], [1, 1], [1, -1]
+                ];
+
+                for (const [dx, dy] of directions) {
+                    let count = 1;
+
+                    for (let step = 1; step < WIN_CONDITION; step++) {
+                        const newRow = row + dy * step;
+                        const newCol = col + dx * step;
+                        if (newRow < 0 || newRow >= GRID_SIZE || 
+                            newCol < 0 || newCol >= GRID_SIZE || 
+                            grid[newRow][newCol] !== player) {
+                            break;
+                        }
+                        count++;
+                    }
+
+                    for (let step = 1; step < WIN_CONDITION; step++) {
+                        const newRow = row - dy * step;
+                        const newCol = col - dx * step;
+                        if (newRow < 0 || newRow >= GRID_SIZE || 
+                            newCol < 0 || newCol >= GRID_SIZE || 
+                            grid[newRow][newCol] !== player) {
+                            break;
+                        }
+                        count++;
+                    }
+
+                    if (count >= WIN_CONDITION) {
+                        highlightWinningCells(row, col);
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            
+            // Подсветка выигрышной комбинации
+            function highlightWinningCells(row, col) {
+                const winningCells = getWinningCells(row, col);
+                if (winningCells) {
+                    winningCells.forEach(([y, x]) => {
+                        const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                        if (cell) {
+                            cell.classList.add('win-animation');
+                        }
+                    });
+                }
+            }
+            
+            // Получение выигрышных клеток
+            function getWinningCells(row, col) {
+                const player = grid[row][col];
+                if (player === -1 || player === 0) return null;
+                
+                const directions = [
+                    [0, 1], [1, 0], [1, 1], [1, -1]
+                ];
+
+                for (const [dx, dy] of directions) {
+                    let cells = [[row, col]];
+
+                    for (let step = 1; step < WIN_CONDITION; step++) {
+                        const newRow = row + dy * step;
+                        const newCol = col + dx * step;
+                        if (newRow < 0 || newRow >= GRID_SIZE || 
+                            newCol < 0 || newCol >= GRID_SIZE || 
+                            grid[newRow][newCol] !== player) {
+                            break;
+                        }
+                        cells.push([newRow, newCol]);
+                    }
+
+                    for (let step = 1; step < WIN_CONDITION; step++) {
+                        const newRow = row - dy * step;
+                        const newCol = col - dx * step;
+                        if (newRow < 0 || newRow >= GRID_SIZE || 
+                            newCol < 0 || newCol >= GRID_SIZE || 
+                            grid[newRow][newCol] !== player) {
+                            break;
+                        }
+                        cells.push([newRow, newCol]);
+                    }
+
+                    if (cells.length >= WIN_CONDITION) {
+                        return cells.slice(0, WIN_CONDITION);
+                    }
+                }
+
+                return null;
+            }
+            
+            // Проверка на заполненность поля
+            function isBoardFull() {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    if (grid[0][x] === 0) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            // Обработка победы
+            function handleWin() {
+                const winner = currentPlayer === 1 ? 'Игрок 1 (Красный)' : 'Игрок 2 (Синий)';
+                statusElement.textContent = `${winner} победил!`;
+                gameOver = true;
+                
+                setTimeout(() => {
+                    if (!gameOver) return;
+                    statusElement.textContent = 'Нажмите "Новая игра"';
+                }, 3000);
+            }
+            
+            // Обработка ничьи
+            function handleDraw() {
+                statusElement.textContent = 'Ничья! Нажмите "Новая игра"';
+                gameOver = true;
+            }
+            
+            // Переключение игрока
+            function switchPlayer() {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                updateStatus();
+            }
+            
+            // Обновление статуса игры
+            function updateStatus() {
+                const playerName = currentPlayer === 1 ? 'Игрок 1 (Красный)' : 'Игрок 2 (Синий)';
+                statusElement.textContent = `Ход: ${playerName}`;
+            }
+            
+            // Запуск игры
+            initGame();
+        });
+    </script>
+</body>
+</html>
